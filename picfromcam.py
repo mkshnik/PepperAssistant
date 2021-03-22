@@ -8,37 +8,41 @@ import matplotlib.pyplot as plt
 from naoqi import ALProxy
 from naoqi import ALModule
 
-
+"""
+Class Robot represents a simple library for working with NAO robots.
+"""
 class Robot:
     def __init__(self, ip, port):
+        # initialization of naoqi modules
         self.posture    = ALProxy("ALRobotPosture", ip, port)
         self.tts        = ALProxy('ALTextToSpeech', ip, port)
+        self.motion     = ALProxy("ALMotion",       ip, port)
+        self.mood       = ALProxy("ALMood",         ip, port)
+        self.proxy      = ALProxy("ALVideoDevice",  ip, port)
+        
         self.tts.setLanguage('English')
         self.tts.setVolume(0.6)
 
-        self.motion     = ALProxy("ALMotion", ip, port)
-        self.mood       = ALProxy("ALMood", ip, port)
-        self.proxy      = ALProxy("ALVideoDevice", ip, port)
-
     def get_image(self):
+        # Initialization and connection to robot's camera.
         self.proxy.unsubscribeAllInstances("cam")
         name        = 'cam'
         cam_id      = 0
-        resolution  = 2   # 640*480
-        color_space = 13  # format BGR
+        resolution  = 2  # 640*480
+        color_space = 13 # format BGR
         fps         = 30
         cam         = self.proxy.subscribeCamera(name, cam_id, resolution, color_space, fps)
+        
         image       = self.proxy.getImageRemote(cam)
-        im          = image[6]                        # vytazeni bajtoveho pole
-        nparr       = np.fromstring(im, np.uint8)     # konverze na cisla
-
+        im          = image[6] # creation of byte array
+        nparr       = np.fromstring(im, np.uint8) # converting it to numbers
         nparr = nparr.reshape(480, 640, 3)
-        #cv2.imshow("camera", nparr)  # zobrazeni vysledneho obrazu
+        
+        #cv2.imshow("camera", nparr) # show result image
+        #self.proxy.unsubscribeCamera(cam) #unsubscribe from robot's camera
+        #cv2.waitKey(0) #close window with result image after pressing any key
 
-        #self.proxy.unsubscribeCamera(cam)
-        #cv2.waitKey(0)
-
-        return nparr                                  # vytvoreni dvourozmerneho pole a BGR trojic
+        return nparr              
 
     # postures:
     def stand(self):
@@ -97,6 +101,7 @@ class BallDetection:
     def __init__(self, picture_name, robot=None, image=None):
         self.picture_name = picture_name
 
+        #if no image parameter is provided image will be taken from pictures_balls\<picture_name>
         if image is None:
             self.picture = cv2.imread('pictures_balls\\' + self.picture_name)
             self.gray_picture = cv2.imread('pictures_balls\\' + self.picture_name, 0)
@@ -161,8 +166,6 @@ class BallDetection:
                 if   y_key <= center_y - 10: message += 'and close '
                 elif x_key >= center_x + 10: message += 'and far '
 
-
-
             messages.append(message)
 
         return messages
@@ -209,7 +212,7 @@ class BallDetection:
                     say += message + '\n'
 
                 robot.set_english()
-                #robot.say_text(say)
+                robot.say_text(say)
                 print(say)
 
         cv2.imshow("final", picture_with_keypoints)
@@ -234,18 +237,3 @@ class BallDetection:
             key = cv2.waitKey(1)
             if key == 27:
                 break
-
-
-robot = Robot('10.10.48.225', 9559)
-
-# robot.make_posture("LyingBelly")
-# robot.move_to_coords(-1, 0, 1)
-
-# color = input()
-color = 'green_and_blue.jpg'
-# color = 'green_and_blue.jpg'
-ball_detector = BallDetection(color, robot, image=robot.get_image())
-ball_detector.detect_all_colors()
-
-#cv2.imshow("img", img)
-cv2.waitKey(0)
