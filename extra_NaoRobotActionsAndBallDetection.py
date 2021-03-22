@@ -1,3 +1,8 @@
+"""
+Simple library to work with Nao robots to detect color and location of balls in robot's camera frame.
+Done as part of assignment in BI-ZIVS class on FIT CTU in Prague
+Made by Mykhailo Kuvshynov
+"""
 # coding=utf-8
 import naoqi
 import qi
